@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Cadastro Retiradas Morador</title>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: ##07271a;
+    text-align: center;
+    margin: 0;
+    padding: 10px;
+  }
+
+  img.logo {
+    width: 80vw;
+    max-width: 320px;
+    margin: 5px auto;
+  }
+
+  input, select {
+    width: 90vw;
+    max-width: 320px;
+    padding: 6px;
+    margin: 4px auto;
+    font-size: 15px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    display: block;
+    background: #fff;
+  }
+
+  button {
+    width: 60vw;
+    max-width: 220px;
+    padding: 10px;
+    margin: 8px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: none;
+    background: #0066cc;
+    color: white;
+    cursor: pointer;
+  }
+
+  .camera-container {
+    width: 80vw;
+    max-width: 300px;
+    margin: auto;
+  }
+
+  video {
+    width: 70%;
+    border-radius: 12px;
+  }
+
+  .preview-box {
+    width: 80vw;
+    max-width: 240px;
+    height: 200px;
+    margin: 10px auto;
+    border: 2px dashed #999;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+  }
+
+  .preview-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 12px;
+  }
+
+  .lgpd {
+    background: #ffcdcd;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 14px;
+    max-width: 320px;
+    margin: auto;
+  }
+  
+  button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+</style>
+</head>
+
+<div id="popupAguarde" style="
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.6);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+">
+  <div style="
+    background:#fff;
+    padding:20px 30px;
+    border-radius:12px;
+    font-size:18px;
+    font-weight:bold;
+  ">
+    Salvando em <span id="contador">3</span> segundos...
+  </div>
+</div>
+
+
+
+<body>
+
+<img src="logo.png" class="logo">
+
+<h4>RETIRADAS DE ENCOMENDAS ANTONY</h4>
+
+<div class="lgpd" id="lgpdBox">
+  TIRE FOTO DE TODAS AS ENCOMENDAS QUE FOREM ENTREGUES.
+  <br><br>
+  <button onclick="aceitarLGPD()">OK</button>
+</div>
+
+<div id="formulario" style="display:none;">
+
+<input id="nome" placeholder="Nome de Quem esta Retirando"> 
+
+<select id="bloco">
+    <option value="">Selecione o Bloco</option>
+    
+    <option value="Não Informado">Não Foi Informado</option>
+    <option value="01">01</option>
+    <option value="02">02</option>
+    <option value="03">03</option>
+    <option value="04">04</option>
+    <option value="05">05</option>
+    <option value="06">06</option>
+    <option value="07">07</option>
+    <option value="08">08</option>
+    <option value="09">09</option>
+    <option value="10">10</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+    <option value="13">13</option>
+  </select>
+
+  <select id="apto">
+    <option value="">Selecione o Apartamento</option>
+    <option value="Não Informado">Não Foi Informado</option>
+    <option value="101">101</option>
+    <option value="102">102</option>
+    <option value="103">103</option>
+    <option value="104">104</option>
+    <option value="201">201</option>
+    <option value="202">202</option>
+    <option value="203">203</option>
+    <option value="204">204</option>
+    <option value="301">301</option>
+    <option value="302">302</option>
+    <option value="303">303</option>
+    <option value="304">304</option>
+    <option value="401">401</option>
+    <option value="402">402</option>
+    <option value="403">403</option>
+    <option value="404">404</option>
+
+  
+  </select>
+
+  <div class="camera-container">
+    <video id="video" autoplay playsinline></video>
+  </div>
+
+  <button onclick="capturar()">Capture Foto da Etiqueta</button>
+
+  <div class="preview-box">
+    <img id="fotoPreview">
+  </div>
+
+<button id="btnFinalizar" onclick="enviar()" disabled>Finalizar</button>
+
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+</div>
+
+<script>
+let stream = null;
+
+function aceitarLGPD() {
+  document.getElementById("lgpdBox").style.display = "none";
+  document.getElementById("formulario").style.display = "block";
+  iniciarCamera();
+}
+
+async function iniciarCamera() {
+  if (stream) {
+    stream.getTracks().forEach(t => t.stop());
+  }
+
+  stream = await navigator.mediaDevices.getUserMedia({
+video: { facingMode: { ideal: "environment" } }
+
+  });
+
+  document.getElementById("video").srcObject = stream;
+}
+
+function capturar() {
+  const video = document.getElementById("video");
+  const canvas = document.getElementById("canvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  ctx.drawImage(video, 0, 0);
+
+  document.getElementById("fotoPreview").src =
+    canvas.toDataURL("image/jpeg");
+
+  // ✅ Habilita o botão Finalizar
+  document.getElementById("btnFinalizar").disabled = false;
+
+  // ⬇️ Rola a página para o final suavemente
+  window.scrollTo({
+    top: document.body.scrollHeight,
+    behavior: "smooth"
+  });
+}
+
+
+function enviar() {
+
+
+
+
+
+  
+  const nome = document.getElementById("nome").value; 
+  const bloco = document.getElementById("bloco").value;
+  const apto = document.getElementById("apto").value;
+
+	  
+ if (!nome || !bloco || !apto)   {
+    alert("Preencha todos os campos!");
+    return;
+  }
+
+  let tempo = 3;
+  const contador = document.getElementById("contador");
+
+  contador.textContent = tempo;
+
+  // 🔔 Mostra popup
+  document.getElementById("popupAguarde").style.display = "flex";
+
+  const intervalo = setInterval(() => {
+    tempo--;
+    contador.textContent = tempo;
+
+    if (tempo <= 0) {
+      clearInterval(intervalo);
+      document.getElementById("popupAguarde").style.display = "none";
+    }
+  }, 1000);
+  
+  
+  const img = document.getElementById("canvas").toDataURL("image/jpeg");
+
+  fetch("https://script.google.com/macros/s/AKfycbzXPQp4Tp5OsCNzQA_CX3GaJdJwMRE7uf5sUXLP1q0qoqbidLjxUHiU-bt8QXR9fNUT/exec", {
+    method: "POST",
+   
+	body: JSON.stringify({ nome,bloco, apto, img })
+  });
+
+  setTimeout(() => location.reload(), 2000);
+  
+
+  
+  
+}
+
+
+
+</script>
+
+</body>
+</html>
+
+
+
+
+
+
+
